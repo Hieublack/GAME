@@ -56,7 +56,7 @@ def action_player(env_state,list_player,file_temp,file_per):
     current_player = int(env_state[-2])
     player_state = state_to_player(env_state)
     played_move,file_temp[current_player],file_per = list_player[current_player](player_state,file_temp[current_player],file_per)
-    if played_move not in get_list_action(player_state):
+    if get_list_action(player_state)[played_move] != 1:
         raise Exception('bot dua ra action khong hop le')
     return played_move,file_temp,file_per
 
@@ -203,9 +203,8 @@ def get_list_action_old(player_state_origin):
 
 @njit(fastmath=True, cache=True)
 def get_list_action(player_state_origin):
-    list_action_return = np.zeros(amount_action())
+    list_action_return = np.zeros(54)
     player_state = player_state_origin.copy()
-    # player_action = int(player_state[-2])
     phase_env = player_state[-1]
     player_state_own = player_state[:20]
     '''
@@ -222,29 +221,23 @@ def get_list_action(player_state_origin):
     if phase_env == 1:
         if player_state_own[-1] != 0:
         #chọn số xúc sắc để đổ: 1 ứng với 1 xúc sắc, 2 ứng với 2 xúc sắc
-            list_action =  np.array([1, 2]) 
+            list_action_return[np.array([1, 2])] = 1 
         else:
-            list_action = np.array([1])  
+            list_action_return[1] = 1
         
-        list_action_return[list_action] = 1
-
     elif phase_env == 2:
         #chọn đổ lại hay k, 0 là ko, 1 là đổ 1, 2 là đổ 2 
-        list_action = np.array([0, 1, 2])
-        list_action_return[list_action] = 1
+        list_action_return[np.array([0, 1, 2])] = 1
     
     elif phase_env == 3:
         #3, 4, 5 lần lượt là lấy tiền của người ở vị trí 1,2,3 sau mình
         all_player_coin = np.array([player_state[20], player_state[40], player_state[60]])
         id_can_stole = np.where(all_player_coin > 0)[0]
-        list_action = id_can_stole + 3 
-        list_action_return[list_action] = 1
-        # return list_action
+        list_action_return[id_can_stole + 3 ] = 1
 
     elif phase_env == 4:
         #6, 7, 8 lần lượt là chọn đổi thẻ với người ở vị trí 1,2,3 sau mình, 9 là ko đổi với ai
-        list_action = np.array([6, 7, 8, 9])
-        list_action_return[list_action] = 1
+        list_action_return[np.array([6, 7, 8, 9])] = 1
 
     elif phase_env == 5:
         #duyệt trong các thẻ đang có, có thẻ nào đổi được thì đưa vào list_action (10-21)
@@ -254,78 +247,74 @@ def get_list_action(player_state_origin):
     elif phase_env == 6:
         #duyệt trong các thẻ của người chơi mình muốn đổi (22-33)
         player_picked_card = player_state[20*int(player_state[-3]):20*(int(player_state[-3]) + 1)][1:13]
-        list_action = np.where(player_picked_card>0)[0] + 22 
-        list_action_return[list_action] = 1
-        # return list_action 
+        list_action_return[np.where(player_picked_card>0)[0] + 22 ] = 1
 
     elif phase_env == 7:
         #chọn mua thẻ, hành động trải từ 34-53 với 53 là hành động bỏ qua ko mua thêm
-        list_action = np.array([53])
+        list_action_return[53] = 1
         p_coin = player_state[0]
         card_board = player_state[80:92]
         card_bought = player_state[92:104]
         if p_coin > 0:
             if card_board[0] > 0 and card_bought[0] == 0:
-                list_action = np.append(list_action, 34)
+                list_action_return[34] = 1
         if p_coin > 0:
             if card_board[1] > 0 and card_bought[1] == 0:
-                list_action = np.append(list_action, 35)
+                list_action_return[35] = 1
         if p_coin > 0 :
             if card_board[2] > 0 and card_bought[2] == 0:
-                list_action = np.append(list_action, 36)
+                list_action_return[36] = 1
         if p_coin > 1 :
             if card_board[3] > 0 and card_bought[3] == 0:
-                list_action = np.append(list_action, 37)
+                list_action_return[37] = 1
         if p_coin > 1 :
             if card_board[4] > 0 and card_bought[4] == 0:
-                list_action = np.append(list_action, 38)
+                list_action_return[38] = 1
         if p_coin > 2 :
             if card_board[5] > 0 and card_bought[5] == 0:
-                list_action = np.append(list_action, 39)
+                list_action_return[39] = 1
         if p_coin > 4 :
             if card_board[6] > 0 and card_bought[6] == 0:
-                list_action = np.append(list_action, 40)
+                list_action_return[40] = 1
         if p_coin > 2 :
             if card_board[7] > 0 and card_bought[7] == 0:
-                list_action = np.append(list_action, 41)
+                list_action_return[41] = 1
         if p_coin > 5 :
             if card_board[8] > 0 and card_bought[8] == 0:
-                list_action = np.append(list_action, 42)
+                list_action_return[42] = 1
         if p_coin > 2 :
             if card_board[9] > 0 and card_bought[9] == 0:
-                list_action = np.append(list_action, 43)
+                list_action_return[43] = 1
         if p_coin > 2 :
             if card_board[10] > 0 and card_bought[10] == 0:
-                list_action = np.append(list_action, 44)
+                list_action_return[44] = 1
         if p_coin > 1 :
             if card_board[11] > 0 and card_bought[11] == 0:
-                list_action = np.append(list_action, 45)
+                list_action_return[45] = 1
 
         if p_coin > 5 :
             if player_state_own[13] == 0:
-                list_action = np.append(list_action, 46)
+                list_action_return[46] = 1
         if p_coin > 6 :
             if player_state_own[14] == 0:
-                list_action = np.append(list_action, 47)
+                list_action_return[47] = 1
         if p_coin > 7 :
             if player_state_own[15] == 0:
-                list_action = np.append(list_action, 48)
+                list_action_return[48] = 1
 
         if p_coin > 3:
             if player_state_own[-1] == 0:
-                list_action = np.append(list_action, 52)
+                list_action_return[52] = 1
         if p_coin > 9:
             if player_state_own[-2] == 0:
-                list_action = np.append(list_action, 51)
+                list_action_return[51] = 1
         if p_coin > 15:
             if player_state_own[-3] == 0:
-                list_action = np.append(list_action, 50)
+                list_action_return[50] = 1
         if p_coin > 21:
             if player_state_own[-4] == 0:
-                list_action = np.append(list_action, 49)
+                list_action_return[49] = 1
 
-        list_action_return[list_action] = 1
-        # return list_action
     return list_action_return
 
 

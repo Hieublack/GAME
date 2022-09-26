@@ -153,7 +153,7 @@ def get_list_action_old(player_state_origin:np.int64):
 
 @njit
 def get_list_action(player_state_origin:np.int64):
-    list_action_return = np.zeros(amount_action())
+    list_action_return = np.zeros(403)
     p_state = player_state_origin.copy()
     p_state = p_state.astype(np.int64)
     arr_card = np.where(p_state[0:52] == 0)[0]
@@ -194,21 +194,18 @@ def get_list_action(player_state_origin:np.int64):
     
     possible_hands = arr_hand[mask,:]
 
-    arr_action = []
+    # arr_action = []
     for hand in possible_hands:
         if hand[0] == 0:
-            arr_action.append(0)
+            list_action_return[0] = 1
         elif hand[0] >= 1 and hand[0] <= 4:
-            arr_action.append(13*np.sum(np.arange(4,5-hand[0],-1)) + hand[1] - (hand[0]-1)*(hand[1]//4) - hand[0] + 2)
+            list_action_return[13*np.sum(np.arange(4,5-hand[0],-1)) + hand[1] - (hand[0]-1)*(hand[1]//4) - hand[0] + 2] = 1
         elif hand[0] >= 5 and hand[0] <= 13:
-            arr_action.append(4*np.sum(np.arange(10,15-hand[0],-1)) + hand[1] - 4*hand[0] + 142)
+            list_action_return[4*np.sum(np.arange(10,15-hand[0],-1)) + hand[1] - 4*hand[0] + 142] = 1
         else:
-            arr_action.append(27*hand[0] + hand[1] - (hand[1]//4) - 39)
-
-    list_action_return[np.array(arr_action)] = 1
+            list_action_return[27*hand[0] + hand[1] - (hand[1]//4) - 39] = 1
 
     return list_action_return
-
 
 
 @njit
@@ -244,7 +241,7 @@ def step(action, e_state):
     p_state = get_player_state(e_state)
     arr_action = get_list_action(p_state)
 
-    if action not in arr_action:
+    if arr_action[action] != 1:
         '''
         Action không hợp lệ
         '''

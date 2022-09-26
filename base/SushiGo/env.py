@@ -246,31 +246,28 @@ def get_list_action_old(player_state_origin:np.int64):
         list_action = np.delete(list_action, index)
     return np.unique(list_action)
 
-
 @njit
 def get_list_action(player_state_origin:np.int64):
-    list_action_return = np.zeros(amount_action())
+    list_action_return = np.zeros(14)
     player_state = player_state_origin.copy()
     player_state = player_state.astype(np.int64)
     amount = player_state[2]
     index_between = int((12 - amount) + 3)
     card = player_state[3:index_between]
-    list_action = card[np.where(card>= 0)[0]]
+    list_action_return[card[np.where(card>= 0)[0]]] = 1
     list_card_player= np.where(player_state[index_between+2:index_between+int((12 - amount) + 2)] == 11)[0]
     if (12-amount)*3 < player_state[1]:
-        list_action = np.array([13])
+        list_action_return[13] = 1
 
-    if len(list_card_player) != 0 and player_state[-2] != 1 and len(list_action) > 1:
-        list_action = np.append(list_action,np.array([12]))
+    if len(list_card_player) != 0 and player_state[-2] != 1 and np.sum(list_action_return) > 1:
+        list_action_return[12] = 1
 
     if player_state[-2] == 1:
-        index = np.where(list_action == 11)[0][0]
-        # print("INDEXXXXXXXXXXX:",index)
-        list_action = np.delete(list_action, index)
-    list_action = np.unique(list_action)
-    list_action_return[list_action] = 1
+        list_action_return[11] = 0
 
     return list_action_return
+
+
 
 @njit
 def reset_card_player(state_sys):

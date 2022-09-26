@@ -181,7 +181,7 @@ def get_list_action_old(player_state_origin:np.int64):
 
 @njit()
 def get_list_action(player_state_origin:np.int64):
-    list_action_return = np.zeros(amount_action())
+    list_action_return = np.zeros(42)
     p_state = player_state_origin.copy()
     p_state = p_state.astype(np.int64)
     b_stocks = p_state[:6] #Các nguyên liệu trên bàn chơi
@@ -191,15 +191,15 @@ def get_list_action(player_state_origin:np.int64):
     p_upside_down_card =  p_state[127:148] #thông tin 3 thẻ đang úp
     taken = p_state[148: 153] #các nguyên liệu đã lấy trong turn
     p_count_st = p_state[12:17] #Nguyên liệu mặc định của người chơi
-    list_action = np.array([0])
+    list_action_return[0] = 1
 
     #Trả nguyên liệu
     p_st_have_auto = p_state[6:12]
     sum_p_st_have_auto = sum(p_st_have_auto)
     if sum_p_st_have_auto > 10:
         list_action_return_stock = [i_+36 for i_ in range(6) if p_st_have_auto[i_] != 0]
-        list_action = np.array(list_action_return_stock)
-        list_action_return[list_action] = 1
+        # list_action = np.array(list_action_return_stock)
+        list_action_return[np.array(list_action_return_stock)] = 1
         return list_action_return
 
     #Lấy nguyên liệu
@@ -210,18 +210,20 @@ def get_list_action(player_state_origin:np.int64):
         if b_stocks[s_] < 3: # Có thể lấy double
             if (s_+ 31) in temp_:
                 temp_.remove(s_ + 31) #Xóa action đã lấy ở file temp nếu nguyên liệu không trên 4
-        list_action = np.append(np.array([0]), temp_)
+        list_action_return[np.array(temp_)] = 1
+        
     elif s_taken == 2:
         lst_s_ = np.where(taken==1)[0]
         for s_ in lst_s_:
             if (s_+31) in temp_:
                 temp_.remove(s_+31)
-        list_action = np.append(np.array([0]), temp_)
+        list_action_return[np.array(temp_)] = 1
     elif s_taken == 0:
         if len(temp_) > 0:
-            list_action = np.array(temp_)
+            list_action_return[0] = 0
+            list_action_return[np.array(temp_)] = 1
+            
     if s_taken > 0:
-        list_action_return[list_action] = 1
         return list_action_return
 
     # Kiểm tra 15 thẻ có thể mở, action từ [1:16]
@@ -230,19 +232,14 @@ def get_list_action(player_state_origin:np.int64):
         if sum(card) > 0:
             card_need = p_st + p_count_st - card[-5:]
             if -sum(card_need[np.where(card_need < 0)]) <= yellow_count or min(card_need) >= 0: #(x*x>0)
-                # print('index_card:', id_card, 'The cần:', card_need, 'thẻ',card)
-                # print('tổng nguyên liệu cần', -sum(card_need[np.where(card_need < 0)]), 'Nguyên liệu vàng:', yellow_count)
-                list_action = np.append(list_action, id_card+1) # check các thẻ có thể lấy
+                list_action_return[id_card+1] = 1
     for id_card in range(3):
         card = p_upside_down_card[7*id_card: 7+7*id_card]
         if sum(card) > 0:
-            # print(p_st, p_count_st, card[-5:], card)
             card_need = p_st + p_count_st -card[-5:]
             if sum(card_need) != 0:
                 if -sum(card_need[np.where(card_need < 0)]) <= yellow_count or min(card_need) >= 0:
-                    list_action = np.append(list_action, id_card+13) # check các thẻ có thể lấy
-
-    #Kiểm tra và úp thẻ, action từ [16:31]
+                    list_action_return[id_card+13] = 1
     list_card_upside_down = []
     count_upside_down = 0
     for id_card in range(3):
@@ -252,18 +249,15 @@ def get_list_action(player_state_origin:np.int64):
         else:
             break
     if count_upside_down < 3: # Nếu chưa có đủ 3 thẻ úp thì có thể úp thêm một thẻ
-        list_action_upside_down = [i+16 for i in range(0, p_state[159])]
-        list_action = np.append(list_action, list_action_upside_down)
+        list_action_upside_down = np.array([i+16 for i in range(0, p_state[159])])
+        list_action_return[list_action_upside_down] = 1
         list_card_hide = np.where(p_state[156:159] == 1)[0] + 28
-        # print(list_card_hide)
-        list_action = np.append(list_action, list_card_hide)
+        list_action_return[list_card_hide] = 1
     
-    if len(list_action) > 1 and list_action[0] == 0:
-        list_action = np.delete(list_action, 0)
+    if np.sum(list_action_return) > 1 and list_action_return[0] == 1:
+        list_action_return[0] = 0
     
-    list_action_return[list_action] = 1
     return list_action_return
-
 
 
 @njit

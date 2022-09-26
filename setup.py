@@ -15,9 +15,9 @@
 
 
 
-type_run_code = 'Test' #Train or Test or Train_1_player
-players = ['NhatAnh_New']
-game_name = 'TLMN'
+type_run_code = 'Train_1_player' #Train or Test or Train_1_player
+players = ['player_random']
+game_name = 'Splendor'
 time_run_game = 79200
 
 path_save_json_test_player = '' #Nơi lưu file json data test các người chơi

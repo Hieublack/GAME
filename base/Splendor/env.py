@@ -175,17 +175,14 @@ def get_list_action_old(player_state_origin:np.int64):
     else: # Pha trả nguyên liệu
         list_action += [i_+192 for i_ in range(6) if self_st[i_] != 0]
     
-
-
     return np.array(list_action)
 
 @njit
 def get_list_action(player_state_origin:np.int64):
-    list_action_return = np.zeros(amount_action())
+    list_action_return = np.zeros(198)
     p_state = player_state_origin.copy()
     p_state = p_state.astype(np.int64)
     phase = p_state[160] # Pha
-    list_action = []
     normal_cards = p_state[:90] # Trạng thái các thẻ thường
     b_stocks = p_state[100:106] # Nguyên liệu trên bàn chơi
     self_st = p_state[106:112] # Nguyên liệu của người chơi
@@ -193,16 +190,20 @@ def get_list_action(player_state_origin:np.int64):
 
     if phase == 0: # Lựa chọn kiểu hành động
         if np.sum(b_stocks[:5]) != 0:
-            list_action.append(1) # Lấy nguyên liệu
-        else:
-            list_action.append(0) # Bỏ lượt
+            # list_action.append(1) # Lấy nguyên liệu
+            list_action_return[1] = 1
+        else: 
+            list_action_return[0] = 1
+            # list_action.append(0) # Bỏ lượt
 
         if np.count_nonzero(normal_cards==-1) < 3:
-            list_action.append(2) # Úp thẻ
+            # list_action.append(2) # Úp thẻ
+            list_action_return[2] = 1
 
         for card_id in cards_check_buy:
             if check_buy_card(p_state, card_id):
-                list_action.append(3) # Mua thẻ
+                # list_action.append(3) # Mua thẻ
+                list_action_return[3] = 1
                 break
     
     elif phase == 1: # Lấy nguyên liệu
@@ -210,55 +211,63 @@ def get_list_action(player_state_origin:np.int64):
         s_taken = np.sum(taken)
         temp_ = [i_+4 for i_ in range(5) if b_stocks[i_] != 0]
         if s_taken == 0:
-            list_action += temp_
+            # list_action += temp_
+            list_action_return[np.array(temp_)] = 1
         elif s_taken == 1:
             s_ = np.where(taken==1)[0][0]
             if b_stocks[s_] >= 3: # Có thể lấy double
-                list_action += temp_
+                # list_action += temp_
+                list_action_return[np.array(temp_)] = 1
             else:
                 if (s_+4) in temp_:
                     temp_.remove(s_+4)
 
-                list_action += temp_
+                # list_action += temp_
+                list_action_return[np.array(temp_)] = 1
         else:
             lst_s_ = np.where(taken==1)[0]
             for s_ in lst_s_:
                 if (s_+4) in temp_:
                     temp_.remove(s_+4)
             
-            list_action += temp_
+            # list_action += temp_
+            list_action_return[np.array(temp_)] = 1
 
         if np.sum(self_st) >= 10:
-            list_action.append(0)
+            # list_action.append(0)
+            list_action_return[0] = 1
     
     elif phase == 2: # Úp thẻ
         temp_ = [i_+9 for i_ in range(90) if normal_cards[i_]==5]
-        list_action += temp_
+        # list_action += temp_
+        list_action_return[np.array(temp_)] = 1
         if p_state[161] == 1:
-            list_action.append(99)
+            # list_action.append(99)
+            list_action_return[99] = 1
         if p_state[162] == 1:
-            list_action.append(100)
+            # list_action.append(100)
+            list_action_return[100] = 1
         if p_state[163] == 1:
-            list_action.append(101)
+            # list_action.append(101)
+            list_action_return[101] = 1
 
     elif phase == 3: # Mua thẻ
         for card_id in cards_check_buy:
             if check_buy_card(p_state, card_id):
-                list_action.append(card_id+102)
+                # list_action.append(card_id+102)
+                list_action_return[card_id+102] = 1
     
     else: # Pha trả nguyên liệu
-        list_action += [i_+192 for i_ in range(6) if self_st[i_] != 0]
-    
-    list_action_return[np.array(list_action)] = 1
+        # list_action += [i_+192 for i_ in range(6) if self_st[i_] != 0]
+        list_action_return[np.array([i_+192 for i_ in range(6) if self_st[i_] != 0])] = 1
 
     return list_action_return
-
 
 
 @njit
 def step(action, e_state, lv1, lv2, lv3):
     list_action = get_list_action(get_player_state(e_state, lv1, lv2, lv3))
-    if action not in list_action:
+    if list_action[action] != 1:
         '''
         Action không hợp lệ
         '''

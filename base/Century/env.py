@@ -1,3 +1,4 @@
+from logging import raiseExceptions
 import numpy as np
 import re
 import numba
@@ -80,11 +81,13 @@ def player_random(player_state, file_temp, file_per):
             pass
     return action, file_temp, file_per
 
+
+
 def action_player(env_state,list_player,file_temp,file_per):
     current_player = int(env_state[-1])
     player_state = state_to_player(env_state)
     played_move,file_temp[current_player],file_per = list_player[current_player](player_state,file_temp[current_player],file_per)
-    if played_move not in get_list_action(player_state):
+    if get_list_action(player_state)[played_move] != 1:
         raise Exception('bot dua ra action khong hop le')
     return played_move,file_temp,file_per
 
@@ -159,7 +162,7 @@ def get_list_action_old(player_state_origin):
     
 @njit(fastmath=True, cache=True)
 def get_list_action(player_state_origin):
-    list_action_return = np.zeros(amount_action())
+    list_action_return = np.zeros(65)
     player_state = player_state_origin.copy()
     phase_env = int(player_state[-1])
     player_state_own = player_state[:51]
@@ -174,13 +177,13 @@ def get_list_action(player_state_origin):
     player_token = player_state_own[2:6]
     if phase_env == 1:
         #chọn mua thẻ (6 thẻ top và 5 thẻ point) hay đánh thẻ (thẻ trên tay) hay nghỉ ngơi (11 action mua, 45 action đánh, 1 action nghỉ)
-        list_action = np.array([0]) #mặc định 1 action nghỉ ngơi
+        list_action_return[0] = 1
         #check mua 6 thẻ top
         number_token = np.sum(player_token)
         card_on_board = player_state[255:303]
         for act in range(6):
             if act <= number_token and np.sum(card_on_board[8*act:8*(act+1)]) >= 0:
-                list_action = np.append(list_action, act+1)
+                list_action_return[act+1] = 1
             else:
                 break
         #check mua 5 thẻ point
@@ -188,47 +191,42 @@ def get_list_action(player_state_origin):
         for id in range(5):
             card_in4 = all_card_point[5*id:5*(id+1)][:4]
             if np.sum(card_in4 > player_token) == 0:
-                list_action = np.append(list_action, id+7)
+                list_action_return[id+7] = 1
         #check đánh thẻ trên tay
         data = all_card_in4()
         for card_hand in range(6, 49):
             if player_state[card_hand] == 1:
                 give = data[card_hand-6][:4]
                 if np.sum(give > player_token) == 0:
-                    list_action = np.append(list_action, card_hand+6)
+                    list_action_return[card_hand+6] = 1
 
         if player_state[49] == 1:
             if np.sum(player_token[:3] > 0) != 0:
-                list_action = np.append(list_action, 55)
+                list_action_return[55] = 1
         if player_state[50] == 1:
             if np.sum(player_token[:3] > 0) != 0:
-                list_action = np.append(list_action, 56)
-        list_action_return[list_action] = 1
-        # return list_action
+                list_action_return[56] = 1
 
     elif phase_env == 2:
         #nếu mua thẻ top và cần bỏ token, chọn token để vào các thẻ trước thẻ mình mua (4 action)
         list_action = np.where(player_token > 0)[0]+57
         list_action_return[list_action] = 1
-        # return list_action
 
     elif phase_env == 3:
         #nếu đánh thẻ, chọn xem có thực hiện action của thẻ tiếp ko (2action, 1 cái là ko, 1 cái trùng vs action dùng thẻ)
         last_action = int(player_state[-2])     #CẬP NHẬT 13/8 từ player_state[-3] thành player_state[-2]
         list_action = np.array([61, last_action])
         list_action_return[list_action] = 1
-        # return list_action
     
     elif phase_env == 4:
         #trả token dư thừa (4 action) sau khi đánh thẻ hoặc mua thẻ top
         list_action = np.where(player_token > 0)[0]+57
         list_action_return[list_action] = 1
-        # return list_action
 
     elif phase_env == 5:
         list_action = np.where(player_token[:3] > 0)[0]+62
         list_action_return[list_action] = 1
-        # return list_action
+        
     return list_action_return
    
 

@@ -156,7 +156,7 @@ def get_list_action_old(player_state_origin:np.int64):
 
 @njit
 def get_list_action(player_state_origin:np.int64):
-    list_action_return = np.zeros(amount_action())
+    list_action_return = np.zeros(68)
     p_state = player_state_origin.copy()
     p_state = p_state.astype(np.int64)
     arr_card = np.where(p_state[0:52] == 0)[0]
@@ -198,14 +198,15 @@ def get_list_action(player_state_origin:np.int64):
     possible_hands = arr_hand[mask,:]
 
     if p_state[60] == 0: # Phase chọn kiểu bộ bài
-        list_action = np.unique(possible_hands[:,0])
-        list_action_return[list_action] = 1
+        # list_action = np.unique(possible_hands[:,0])
+        list_action_return[np.unique(possible_hands[:,0])] = 1
         return list_action_return
     else:
         mask_1 = possible_hands[:,0] == p_state[61]
-        list_action = possible_hands[mask_1,:][:,1] + 16
-        list_action_return[list_action] = 1
+        # list_action = possible_hands[mask_1,:][:,1] + 16
+        list_action_return[possible_hands[mask_1,:][:,1] + 16] = 1
         return list_action_return
+
 
 @njit
 def close_game(e_state):
@@ -239,7 +240,7 @@ def check_victory(p_state):
 def step(action, e_state):
     p_state = get_player_state(e_state)
     list_action = get_list_action(p_state)
-    if action not in list_action:
+    if list_action[action] != 1:
         '''
         Action không hợp lệ
         '''
