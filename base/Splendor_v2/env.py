@@ -191,14 +191,15 @@ def get_list_action(player_state_origin:np.int64):
     p_upside_down_card =  p_state[127:148] #thông tin 3 thẻ đang úp
     taken = p_state[148: 153] #các nguyên liệu đã lấy trong turn
     p_count_st = p_state[12:17] #Nguyên liệu mặc định của người chơi
-    
-
+    list_action_return[0] = 1
+    check_action_0 = False
     #Trả nguyên liệu
     p_st_have_auto = p_state[6:12]
     sum_p_st_have_auto = sum(p_st_have_auto)
     if sum_p_st_have_auto > 10:
         list_action_return_stock = [i_+36 for i_ in range(6) if p_st_have_auto[i_] != 0]
         # list_action = np.array(list_action_return_stock)
+        list_action_return[0] = 0
         list_action_return[np.array(list_action_return_stock)] = 1
         return list_action_return
 
@@ -210,21 +211,19 @@ def get_list_action(player_state_origin:np.int64):
         if b_stocks[s_] < 3: # Có thể lấy double
             if (s_+ 31) in temp_:
                 temp_.remove(s_ + 31) #Xóa action đã lấy ở file temp nếu nguyên liệu không trên 4
-        list_action_return[0] = 1
         list_action_return[np.array(temp_)] = 1
-        
+        check_action_0 = True
     elif s_taken == 2:
         lst_s_ = np.where(taken==1)[0]
         for s_ in lst_s_:
             if (s_+31) in temp_:
                 temp_.remove(s_+31)
-        list_action_return[0] = 1
         list_action_return[np.array(temp_)] = 1
+        check_action_0 = True
     elif s_taken == 0:
         if len(temp_) > 0:
-            list_action_return[0] = 0
-            list_action_return[np.array(temp_)] = 1
-            
+            # list_action_return[0] = 0
+            list_action_return[np.array(temp_)] = 1   
     if s_taken > 0:
         return list_action_return
 
@@ -242,7 +241,6 @@ def get_list_action(player_state_origin:np.int64):
             if sum(card_need) != 0:
                 if -sum(card_need[np.where(card_need < 0)]) <= yellow_count or min(card_need) >= 0:
                     list_action_return[id_card+13] = 1
-    list_card_upside_down = []
     count_upside_down = 0
     for id_card in range(3):
         card_upside_down = p_upside_down_card[7*id_card:7+7*id_card]
@@ -255,10 +253,10 @@ def get_list_action(player_state_origin:np.int64):
         list_action_return[list_action_upside_down] = 1
         list_card_hide = np.where(p_state[156:159] == 1)[0] + 28
         list_action_return[list_card_hide] = 1
-    
-    if np.sum(list_action_return) > 1 and list_action_return[0] == 1:
+        
+    if check_action_0 == False and np.sum(list_action_return) > 1:
         list_action_return[0] = 0
-    
+
     return list_action_return
 
 

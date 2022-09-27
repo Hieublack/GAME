@@ -18,10 +18,11 @@ def test(player_state, file_temp, file_per):
     list_action = get_list_action(player_state)
     c = np.where(list_action == 1)[0]
     b = get_list_action_old(player_state)
-
+    # print('________')
     action = int(np.random.choice(b))
     # print(c,b,action)
-    if len(np.setdiff1d(b,c)) != 0 and len(np.setdiff1d(c,b)) != 0:
+    if len(np.setdiff1d(b,c)) != 0 or len(np.setdiff1d(c,b)) != 0 or len(c) != len(b):
+        print(c,b,action)
         raise Exception('toang action')
     # print(list_action)
     if check_victory(player_state) == -1:

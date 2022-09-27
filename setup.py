@@ -17,7 +17,7 @@
 
 type_run_code = 'Train_1_player' #Train or Test or Train_1_player
 players = ['player_random']
-game_name = 'Splendor_v2'
+game_name = 'SushiGo'
 time_run_game = 79200
 
 path_save_json_test_player = '' #Nơi lưu file json data test các người chơi
