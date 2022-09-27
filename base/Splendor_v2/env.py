@@ -191,7 +191,7 @@ def get_list_action(player_state_origin:np.int64):
     p_upside_down_card =  p_state[127:148] #thông tin 3 thẻ đang úp
     taken = p_state[148: 153] #các nguyên liệu đã lấy trong turn
     p_count_st = p_state[12:17] #Nguyên liệu mặc định của người chơi
-    list_action_return[0] = 1
+    
 
     #Trả nguyên liệu
     p_st_have_auto = p_state[6:12]
@@ -210,6 +210,7 @@ def get_list_action(player_state_origin:np.int64):
         if b_stocks[s_] < 3: # Có thể lấy double
             if (s_+ 31) in temp_:
                 temp_.remove(s_ + 31) #Xóa action đã lấy ở file temp nếu nguyên liệu không trên 4
+        list_action_return[0] = 1
         list_action_return[np.array(temp_)] = 1
         
     elif s_taken == 2:
@@ -217,6 +218,7 @@ def get_list_action(player_state_origin:np.int64):
         for s_ in lst_s_:
             if (s_+31) in temp_:
                 temp_.remove(s_+31)
+        list_action_return[0] = 1
         list_action_return[np.array(temp_)] = 1
     elif s_taken == 0:
         if len(temp_) > 0:
